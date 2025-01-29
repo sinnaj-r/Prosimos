@@ -718,7 +718,13 @@ class AndFiringRule():
                 # initial_batch_size = batch_size
                 # if previously batch_size satisfy the size rule - return it
                 # if not - return the one we've just calculated with the size rule limitations
-                batch_size = batch_size if rule_operator(batch_size, value2) else batch_size_rule
+                # If batch_size is still sys.maxsize, use batch_size_rule directly
+                # Otherwise, use the original logic for combining with ready/large_wt rules
+                if batch_size == sys.maxsize:
+                    batch_size = batch_size_rule
+                else:
+                    batch_size = batch_size if rule_operator(batch_size, value2) else batch_size_rule
+                
                 
                 if batch_size > current_batch_size or \
                     enabled_time > initial_curr_enabled_at:
