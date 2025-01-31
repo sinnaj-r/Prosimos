@@ -411,7 +411,7 @@ class BPMNGraph:
         spec = {
             "size": size_count,
             "waiting_times": waiting_time,
-            "enabled_datetimes": [ v.datetime for (_, v) in self.batch_waiting_processes[task_id].items() ],
+            "enabled_datetimes": sorted([ v.datetime for (_, v) in self.batch_waiting_processes[task_id].items() ]),
             "curr_enabled_at": enabled_at.datetime,
             "is_triggered_by_batch": True, # specify where from we checking the rule. If not triggered by batch - then we move to midnight time
             "is_only_one_batch_return": False
