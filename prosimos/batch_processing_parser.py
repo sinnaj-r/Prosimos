@@ -116,7 +116,7 @@ class BatchProcessingParser:
             2) week_day rule is the second item from the end
         """
 
-        BatchProcessingParser._move_to_end("daily_hour", list)
+        BatchProcessingParser._move_to_end("week_day", list)
         BatchProcessingParser._move_to_end("size", list)
 
     @staticmethod

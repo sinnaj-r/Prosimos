@@ -556,7 +556,7 @@ class AndFiringRule():
         draft_element = {
             "size": len(case_id_and_enabled_times),
             "waiting_times": waiting_times ,
-            "enabled_datetimes": [ v.datetime for (_, v) in case_id_and_enabled_times ],
+            "enabled_datetimes": sorted([ v.datetime for (_, v) in case_id_and_enabled_times ]),
             "curr_enabled_at": last_task_start_datetime,
             "is_triggered_by_batch": False,
             "is_only_one_batch_return": False
