@@ -179,7 +179,7 @@ class FiringSubRule():
         return nearest_enabled_datetime
 
 
-    def get_batch_size_relative_time(self, element):
+    def get_batch_size_relative_time(self, element, debug=False):
         curr_enabled_at = element["curr_enabled_at"]
         rule_value_str = self.value2.upper()
   
@@ -223,9 +223,12 @@ class FiringSubRule():
         if len(follow_rule) > 0:
             return len(follow_rule), boundary_day 
         
+        if debug:
+            print("WARNING: get_batch_size_relative_time returned 0")
+
         return 0, None
 
-    def get_batch_size_by_daily_hour(self, element, only_one_date, range):
+    def get_batch_size_by_daily_hour(self, element, only_one_date, range, debug=False):
         """
         only_one_date: no loops, you just check whether some batch could be enabled at this current datetime
         """
@@ -302,6 +305,8 @@ class FiringSubRule():
             if only_one_date:
                 # if we would have something to return,
                 # it returned back in the prev statement
+                if debug:
+                    print("WARNING: get_batch_size_by_daily_hour returned 0")
                 return 0, None
 
             # go to the next iteration
@@ -556,7 +561,7 @@ class AndFiringRule():
         draft_element = {
             "size": len(case_id_and_enabled_times),
             "waiting_times": waiting_times ,
-            "enabled_datetimes": sorted([ v.datetime for (_, v) in case_id_and_enabled_times ]),
+            "enabled_datetimes": [ v.datetime for (_, v) in case_id_and_enabled_times ],
             "curr_enabled_at": last_task_start_datetime,
             "is_triggered_by_batch": False,
             "is_only_one_batch_return": False
@@ -619,7 +624,7 @@ class AndFiringRule():
 
         if is_true_result:
             num_tasks_in_queue = element["size"]
-            num_tasks_in_batch, start_time_from_rule = self.get_firing_batch_size(num_tasks_in_queue, element)
+            num_tasks_in_batch, start_time_from_rule = self.get_firing_batch_size(num_tasks_in_queue, element, debug=True)
 
             if not self.is_batch_size_enough_for_exec(num_tasks_in_batch):
                 print("WARNING: Getting batch size for the execution returned to be 0. Verify provided rules.")
@@ -680,7 +685,7 @@ class AndFiringRule():
 
         return batch_size, enabled_time
 
-    def get_firing_batch_size(self, current_batch_size, element):
+    def get_firing_batch_size(self, current_batch_size, element, debug=False):
         batch_size = sys.maxsize
         initial_curr_enabled_at = element["curr_enabled_at"]
         enabled_time = initial_curr_enabled_at
@@ -736,9 +741,11 @@ class AndFiringRule():
                 return batch_size, enabled_time
             
             elif subrule.variable1 == "week_day":
-                curr_size, enabled_time = subrule.get_batch_size_relative_time(element)
+                curr_size, enabled_time = subrule.get_batch_size_relative_time(element, debug)
                 if curr_size < 2:
                     batch_size = 0
+                    if debug:
+                        print("WARNING: Weekday rule returned batch size of 0")
                     break
                 is_time_forced = True
             elif subrule.variable1 == "daily_hour":
@@ -747,9 +754,11 @@ class AndFiringRule():
                     element["curr_enabled_at"] = enabled_time
                     only_one_date = True
                 
-                curr_size, enabled_time = subrule.get_batch_size_by_daily_hour(element, only_one_date, self.daily_hour_range)
+                curr_size, enabled_time = subrule.get_batch_size_by_daily_hour(element, only_one_date, self.daily_hour_range, debug)
                 if curr_size < 2:
                     batch_size = 0
+                    if debug:
+                        print("WARNING: Daily hour rule returned batch size of 0")
                     break
 
                 if is_time_forced:
@@ -775,6 +784,8 @@ class AndFiringRule():
             # 1) no iterations being made or 0 as a resulted size of batch
             # 2) enabled_time is not defined
             # 3) enabled_time is in the future (will be handled later)
+            if debug:
+                print("WARNING: get_firing_batch_size returned 0")
             return 0, None
 
         return batch_size, enabled_time
