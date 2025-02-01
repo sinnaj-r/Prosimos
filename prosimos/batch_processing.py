@@ -278,12 +278,7 @@ class FiringSubRule():
                         
                     follow_rule.append(en_time)
                     if len(follow_rule) == 2:
-                        if op in [operator.gt, operator.ge]:
-                            final_enabled_time = min(en_time, prev_day_to_oldest_rule_time)
-                        elif op in [operator.lt, operator.le]:
-                            final_enabled_time = max(en_time, prev_day_to_oldest_rule_time)
-                        else:
-                            final_enabled_time = en_time
+                        final_enabled_time = en_time
                         break
                 else:
                     # do not satisfy the condition
@@ -761,7 +756,13 @@ class AndFiringRule():
                     element["curr_enabled_at"] = enabled_time
                     only_one_date = True
                 
-                curr_size, enabled_time = subrule.get_batch_size_by_daily_hour(element, only_one_date, self.daily_hour_range, debug)
+                curr_size, new_enabled_time = subrule.get_batch_size_by_daily_hour(element, only_one_date, self.daily_hour_range, debug)
+                if only_one_date and subrule.operator in ["<", "<="]:
+                    enabled_time = max(initial_curr_enabled_at, new_enabled_time)
+                elif subrule.operator in [">", ">="]:
+                    enabled_time = min(initial_curr_enabled_at, new_enabled_time)
+                else:
+                    enabled_time = new_enabled_time
                 if curr_size < 2:
                     batch_size = 0
                     if debug:
