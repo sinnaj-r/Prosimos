@@ -372,7 +372,7 @@ class SimBPMEnv:
             values.append(str(full_event.batch_id))
         return [*row_basic_info, *values]
 
-    def append_any_enabled_batch_tasks(self, current_event: EnabledEvent) -> List[EnabledEvent]:
+    def append_any_enabled_batch_tasks(self, current_event: EnabledEvent):
         enabled_datetime = CustomDatetimeAndSeconds(current_event.enabled_at, current_event.enabled_datetime)
         enabled_batch_task_ids = self.sim_setup.is_any_batch_enabled(enabled_datetime)
 

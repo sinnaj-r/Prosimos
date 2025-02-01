@@ -10,7 +10,7 @@ from typing import List
 from pix_framework.statistics.distribution import DurationDistribution
 
 from prosimos.batch_processing import (BATCH_TYPE, AndFiringRule,
-                                       BatchConfigPerTask)
+                                       BatchConfigPerTask, OrFiringRule)
 from prosimos.exceptions import InvalidBpmnModelException
 from prosimos.weekday_helper import CustomDatetimeAndSeconds
 from prosimos.simulation_execution_stats import SimulationExecutionStats
@@ -398,7 +398,7 @@ class BPMNGraph:
             print(f"WARNING: task {task_id} does not have config for batching processing")
             return False, None, None
 
-        firing_rules: List[AndFiringRule] = task_batch_info.firing_rules
+        firing_rules: OrFiringRule = task_batch_info.firing_rules
 
         size_count = self.batch_count[task_id] if self.batch_count.get(task_id, None) != None else 0
 
@@ -470,7 +470,7 @@ class BPMNGraph:
 
     def get_start_time(self, task_id, last_task_enabled_time) -> tuple([int, int, CustomDatetimeAndSeconds]):
         task_batch_info = self.batch_info.get(task_id, None)
-        firing_rules: List[AndFiringRule] = task_batch_info.firing_rules
+        firing_rules: OrFiringRule = task_batch_info.firing_rules
         enabled_times = list(self.batch_waiting_processes[task_id].items())
         batch_enabled_time = firing_rules.get_enabled_time(
             enabled_times,

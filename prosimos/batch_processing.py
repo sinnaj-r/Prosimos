@@ -627,7 +627,7 @@ class AndFiringRule():
             num_tasks_in_batch, start_time_from_rule = self.get_firing_batch_size(num_tasks_in_queue, element, debug=True)
 
             if not self.is_batch_size_enough_for_exec(num_tasks_in_batch):
-                print("WARNING: Getting batch size for the execution returned to be 0. Verify provided rules.")
+                #print("WARNING: Getting batch size for the execution returned to be 0. Verify provided rules.")
                 return False, None, None
             
             batch_spec = [num_tasks_in_batch]
@@ -871,12 +871,12 @@ class AndFiringRule():
 
 
 class OrFiringRule():
-    def __init__(self, or_firing_rule_arr):
-        self.rules = or_firing_rule_arr
+    def __init__(self, or_firing_rule_arr: list[AndFiringRule]):
+        self.rules: list[AndFiringRule] = or_firing_rule_arr
 
     def is_ready_wt_rule_present(self):
-        for or_rule in self.rules:
-            is_present = or_rule._has_ready_wt_rule()
+        for and_rule in self.rules:
+            is_present = and_rule._has_ready_wt_rule()
             if is_present:
                 return is_present
         
