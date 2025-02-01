@@ -113,11 +113,11 @@ class BatchProcessingParser:
         """
         Re-order the elements inside list so that:
             1) size rule is the last one in the sequence
-            2) week_day rule is the second item from the end
+            2) week_day rule is the first one in the sequence
         """
 
-        BatchProcessingParser._move_to_end("week_day", list)
         BatchProcessingParser._move_to_end("size", list)
+        BatchProcessingParser._move_to_start("week_day", list)
 
     @staticmethod
     def _move_to_end(rule_name: str, list):
@@ -131,3 +131,10 @@ class BatchProcessingParser:
             return
 
         list.insert(last_index, list.pop(rule_index))
+
+    @staticmethod
+    def _move_to_start(rule_name: str, list):
+        rule_index = next(
+            (i for i, item in enumerate(list) if item.variable1 == rule_name), -1
+        )
+        list.insert(0, list.pop(rule_index))
