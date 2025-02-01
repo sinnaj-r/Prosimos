@@ -626,7 +626,7 @@ class AndFiringRule():
 
         if is_true_result:
             num_tasks_in_queue = element["size"]
-            num_tasks_in_batch, start_time_from_rule = self.get_firing_batch_size(num_tasks_in_queue, element, debug=True)
+            num_tasks_in_batch, start_time_from_rule = self.get_firing_batch_size(num_tasks_in_queue, element)
 
             if not self.is_batch_size_enough_for_exec(num_tasks_in_batch):
                 #print("WARNING: Getting batch size for the execution returned to be 0. Verify provided rules.")
