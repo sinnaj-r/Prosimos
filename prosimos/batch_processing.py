@@ -278,7 +278,12 @@ class FiringSubRule():
                         
                     follow_rule.append(en_time)
                     if len(follow_rule) == 2:
-                        final_enabled_time = en_time
+                        if op in [operator.gt, operator.ge]:
+                            final_enabled_time = min(en_time, prev_day_to_oldest_rule_time)
+                        elif op in [operator.lt, operator.le]:
+                            final_enabled_time = max(en_time, prev_day_to_oldest_rule_time)
+                        else:
+                            final_enabled_time = en_time
                         break
                 else:
                     # do not satisfy the condition
@@ -606,7 +611,9 @@ class AndFiringRule():
         is_true_result = True
 
         for rule in self.rules:
-            is_true_result = is_true_result and rule.is_true(element)
+            if not rule.is_true(element):
+                is_true_result = False
+                break
 
         if not is_true_result:
             # try finding whether we have batch waiting
