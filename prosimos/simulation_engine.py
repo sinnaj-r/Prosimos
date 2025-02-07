@@ -162,6 +162,7 @@ class SimBPMEnv:
                     c_event.task_id,
                     self.all_process_states[p_case],
                     enabled_time,
+                    ignore_enabled_check=True,
                 )
 
                 for next_task in enabled_tasks:

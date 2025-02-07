@@ -91,8 +91,8 @@ class SimDiffSetup:
     def is_enabled(self, e_id, p_state):
         return self.bpmn_graph.is_enabled(e_id, p_state)
 
-    def update_process_state(self, p_case, e_id, p_state, completed_time_prev_event):
-        return self.bpmn_graph.update_process_state(p_case, e_id, p_state, completed_time_prev_event)
+    def update_process_state(self, p_case, e_id, p_state, completed_time_prev_event, ignore_enabled_check=False):
+        return self.bpmn_graph.update_process_state(p_case, e_id, p_state, completed_time_prev_event, ignore_enabled_check)
 
     def is_any_batch_enabled(self, started_datetime):
         return self.bpmn_graph.is_any_batch_enabled(started_datetime)

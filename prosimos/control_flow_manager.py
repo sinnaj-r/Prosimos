@@ -276,7 +276,7 @@ class BPMNGraph:
                     elements_queue.append(next_e.id)
         return None
 
-    def is_enabled(self, e_id, p_state):
+    def is_enabled(self, e_id:str, p_state:ProcessState):
         if e_id not in self.element_info:
             return False
         if e_id == self.starting_event:
@@ -320,12 +320,12 @@ class BPMNGraph:
                 return False
         return False
 
-    def update_process_state(self, case_id, e_id, p_state, completed_datetime_prev_event: CustomDatetimeAndSeconds):
+    def update_process_state(self, case_id, e_id, p_state, completed_datetime_prev_event: CustomDatetimeAndSeconds, ignore_enabled_check: bool = False):
         """
         :param completed_time_prev_event: datetime of the completion of the previous event
                                           which equals to enabled time for current event
         """
-        if not self.is_enabled(e_id, p_state):
+        if not ignore_enabled_check and not self.is_enabled(e_id, p_state):
             return []
         enabled_tasks = list()
         to_execute = [e_id]
