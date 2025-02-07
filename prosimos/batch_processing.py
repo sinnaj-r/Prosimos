@@ -334,7 +334,7 @@ class FiringSubRule():
             return 0, None
 
 
-    def is_invalid_end(self, curr_batch_size, last_wt):
+    def is_invalid_end(self, curr_batch_size, last_wt, ready_wt_boundaries):
         is_invalid = False
 
         if RULE_TYPE(self.variable1) == RULE_TYPE.SIZE:
@@ -348,7 +348,7 @@ class FiringSubRule():
             # if we surpass the upper limit of waiting_time,
             # this will not be changed in the future cause we will not receive a new item
             # and thus ready_wt value will not be reset
-            _, high_boundary = self.ready_wt_boundaries
+            _, high_boundary = ready_wt_boundaries
             is_invalid = last_wt > high_boundary
 
         return is_invalid
@@ -864,7 +864,7 @@ class AndFiringRule():
         is_invalid = False
         
         for simple_rule in self.rules:
-            is_invalid = simple_rule.is_invalid_end(curr_batch_size, last_wt)
+            is_invalid = simple_rule.is_invalid_end(curr_batch_size, last_wt, self.ready_wt_boundaries)
 
             if is_invalid:
                 break
