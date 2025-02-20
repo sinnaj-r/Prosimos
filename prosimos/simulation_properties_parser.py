@@ -711,18 +711,18 @@ def extract_dist_params(dist_info):
         # input: loc = 0, scale = mean
         return {
             "distribution_name": "expon",
-            "distribution_params": [0, dist_params["arg1"]],
+            "distribution_params": [dist_params["arg1"], 0, float("inf")],
         }
     if dist_name == "NORMAL":
         # input: loc = mean, scale = standard deviation
         return {
             "distribution_name": "norm",
-            "distribution_params": [dist_params["mean"], dist_params["arg1"]],
+            "distribution_params": [dist_params["mean"], dist_params["arg1"], 0, float("inf")],
         }
     if dist_name == "FIXED":
         return {
             "distribution_name": "fix",
-            "distribution_params": [dist_params["mean"], 0, 1],
+            "distribution_params": [dist_params["mean"], 0, float("inf")],
         }
     if dist_name == "UNIFORM":
         # input: loc = from, scale = to - from
@@ -731,36 +731,28 @@ def extract_dist_params(dist_info):
             "distribution_params": [
                 dist_params["arg1"],
                 dist_params["arg2"] - dist_params["arg1"],
+                0,
+                float("inf")
             ],
         }
     if dist_name == "GAMMA":
         # input: shape, loc=0, scale
-        mean, variance = dist_params["mean"], dist_params["arg1"]
+        mean = dist_params["mean"]
+        arg1 = dist_params["arg1"]
+        variance = (mean ** 2) / arg1
         return {
             "distribution_name": "gamma",
-            "distribution_params": [pow(mean, 2) / variance, 0, variance / mean],
+            "distribution_params": [mean, variance, 0, float("inf")],
         }
     if dist_name == "TRIANGULAR":
-        # input: c = mode, loc = min, scale = max - min
-        return {
-            "distribution_name": "triang",
-            "distribution_params": [
-                dist_params["mean"],
-                dist_params["arg1"],
-                dist_params["arg2"] - dist_params["arg1"],
-            ],
-        }
+        raise NotImplementedError("Triangular distribution not implemented")
+        
     if dist_name == "LOGNORMAL":
-        mean_2 = dist_params["mean"] ** 2
+        mean = dist_params["mean"]
         variance = dist_params["arg1"]
-        phi = sqrt([variance + mean_2])[0]
-        mu = log(mean_2 / phi)
-        sigma = sqrt([log(phi**2 / mean_2)])[0]
-
-        # input: s = sigma = standard deviation, loc = 0, scale = exp(mu)
         return {
             "distribution_name": "lognorm",
-            "distribution_params": [sigma, 0, exp(mu)],
+            "distribution_params": [mean, variance, 0, float("inf")],
         }
     return None
 
