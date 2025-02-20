@@ -611,7 +611,7 @@ def parse_qbp_simulation_process(qbp_bpmn_path, out_file):
     simod_elements = simod_root.find("qbp:elements", simod_ns)
     pools_json = []
 
-    resource_calendars = dict()
+    resource_calendars = list()
     for resource in bpmn_resources:
         pools_json.append({
             "id": resource.attrib["id"],
@@ -635,9 +635,15 @@ def parse_qbp_simulation_process(qbp_bpmn_path, out_file):
                 }
             )
             resource_pools[resource.attrib["id"]].append(nr_id)
-            resource_calendars[nr_id] = calendars_map[calendar_id]
+            resource_calendars.append({
+                "id": calendar_id,
+                "name": calendar_id,
+                "time_periods": calendars_map[calendar_id]
+            })
 
-    task_resource_dist = dict()
+        
+    task_resource_distribution = []
+    
     for e_inf in simod_elements:
         task_id = e_inf.attrib["elementId"]
         rpool_id = e_inf.find("qbp:resourceIds", simod_ns).find("qbp:resourceId", simod_ns).text
@@ -649,11 +655,25 @@ def parse_qbp_simulation_process(qbp_bpmn_path, out_file):
         for resource_index in range(len(pools_json[rpool_index]["resource_list"])): 
             pools_json[rpool_index]["resource_list"][resource_index]["assigned_tasks"].append(task_id)
 
-        t_dist = extract_dist_params(dist_info)
-        if task_id not in task_resource_dist:
-            task_resource_dist[task_id] = dict()
-        for rp_id in resource_pools[rpool_id]:
-            task_resource_dist[task_id][rp_id] = t_dist
+        # Extract distribution parameters
+        distribution_data = extract_dist_params(dist_info)
+
+        distribution_params = [{"value": value} for value in distribution_data["distribution_params"]]
+        
+        # Create task entry with its resources
+        task_entry = {
+            "task_id": task_id,
+            "resources": [
+                {
+                    "resource_id": resource_id,
+                    "distribution_name": distribution_data["distribution_name"],
+                    "distribution_params": distribution_params
+                }
+                for resource_id in resource_pools[rpool_id]
+            ]
+        }
+        task_resource_distribution.append(task_entry)
+
 
     # 5.Saving all in a single JSON file
 
@@ -662,8 +682,9 @@ def parse_qbp_simulation_process(qbp_bpmn_path, out_file):
         "arrival_time_distribution": arrival_time_dist,
         "arrival_time_calendar": calendars_map[arrival_calendar_id],
         "gateway_branching_probabilities": gateway_branching_probabilities,
-        "task_resource_distribution": task_resource_dist,
+        "task_resource_distribution": task_resource_distribution,
         "resource_calendars": resource_calendars,
+        "event_distribution": {}
     }
     with open(out_file, "w") as file_writter:
         json.dump(to_save, file_writter)
