@@ -543,21 +543,39 @@ def parse_qbp_simulation_process(qbp_bpmn_path, out_file):
         print("PARSING ABORTED: Input BPMN model is not a simulation model, i.e., simulation parameters are missing.")
         return
 
-    # 1. Extracting gateway branching probabilities
+
     gateways_branching = dict()
     reverse_map = dict()
+    
+    # First collect gateway information
     for process in root.findall("xmlns:process", bpmn_element_ns):
         for xmlns_key in ["xmlns:exclusiveGateway", "xmlns:inclusiveGateway"]:
             for bpmn_element in process.findall(xmlns_key, bpmn_element_ns):
                 if bpmn_element.attrib["gatewayDirection"] == "Diverging":
-                    gateways_branching[bpmn_element.attrib["id"]] = dict()
+                    gateway_id = bpmn_element.attrib["id"]
+                    gateways_branching[gateway_id] = dict()
                     for out_flow in bpmn_element.findall("xmlns:outgoing", bpmn_element_ns):
                         arc_id = out_flow.text.strip()
-                        gateways_branching[bpmn_element.attrib["id"]][arc_id] = 0
-                        reverse_map[arc_id] = bpmn_element.attrib["id"]
+                        gateways_branching[gateway_id][arc_id] = 0
+                        reverse_map[arc_id] = gateway_id
+
+    # Then collect probabilities
     for flow_prob in simod_root.find("qbp:sequenceFlows", simod_ns).findall("qbp:sequenceFlow", simod_ns):
         flow_id = flow_prob.attrib["elementId"]
-        gateways_branching[reverse_map[flow_id]][flow_id] = flow_prob.attrib["executionProbability"]
+        if flow_id in reverse_map:
+            gateway_id = reverse_map[flow_id]
+            gateways_branching[gateway_id][flow_id] = float(flow_prob.attrib["executionProbability"])
+
+    gateway_branching_probabilities = []
+    for gateway_id, paths in gateways_branching.items():
+        gateway_data = {
+            "gateway_id": gateway_id,
+            "probabilities": [
+                {"path_id": path_id, "value": float(prob)}
+                for path_id, prob in paths.items()
+            ]
+        }
+        gateway_branching_probabilities.append(gateway_data)
 
     # 2. Extracting Resource Calendars
     resource_pools = dict()
@@ -585,28 +603,35 @@ def parse_qbp_simulation_process(qbp_bpmn_path, out_file):
 
     # 3. Extracting Arrival time distribution
     arrival_time_dist = extract_dist_params(simod_root.find("qbp:arrivalRateDistribution", simod_ns))
+    # Convert list[float] to list[{"value": float}]
+    arrival_time_dist["distribution_params"] = [{"value": value} for value in arrival_time_dist["distribution_params"]]
 
     # 4. Extracting task-resource duration distributions
     bpmn_resources = simod_root.find("qbp:resources", simod_ns)
     simod_elements = simod_root.find("qbp:elements", simod_ns)
-    pools_json = dict()
+    pools_json = []
 
     resource_calendars = dict()
     for resource in bpmn_resources:
-        pools_json[resource.attrib["id"]] = {
+        pools_json.append({
+            "id": resource.attrib["id"],
             "name": resource.attrib["name"],
             "resource_list": list(),
-        }
+            
+        })
+        new_pool_index = len(pools_json) - 1
         resource_pools[resource.attrib["id"]] = list()
         calendar_id = resource.attrib["timetableId"]
         for i in range(1, int(resource.attrib["totalAmount"]) + 1):
             nr_id = "%s_%d" % (resource.attrib["id"], i)
-            pools_json[resource.attrib["id"]]["resource_list"].append(
+            pools_json[new_pool_index]["resource_list"].append(
                 {
                     "id": nr_id,
                     "name": "%s_%d" % (resource.attrib["name"], i),
                     "cost_per_hour": resource.attrib["costPerHour"],
                     "amount": 1,
+                    "calendar": resource.attrib["timetableId"],
+                    "assigned_tasks": list(),
                 }
             )
             resource_pools[resource.attrib["id"]].append(nr_id)
@@ -617,6 +642,12 @@ def parse_qbp_simulation_process(qbp_bpmn_path, out_file):
         task_id = e_inf.attrib["elementId"]
         rpool_id = e_inf.find("qbp:resourceIds", simod_ns).find("qbp:resourceId", simod_ns).text
         dist_info = e_inf.find("qbp:durationDistribution", simod_ns)
+
+        # Find resource pool index
+        rpool_index = next((i for i, pool in enumerate(pools_json) if pool['id'] == rpool_id), None)
+        # Append the assigned task to every resource in the resource pool
+        for resource_index in range(len(pools_json[rpool_index]["resource_list"])): 
+            pools_json[rpool_index]["resource_list"][resource_index]["assigned_tasks"].append(task_id)
 
         t_dist = extract_dist_params(dist_info)
         if task_id not in task_resource_dist:
@@ -630,7 +661,7 @@ def parse_qbp_simulation_process(qbp_bpmn_path, out_file):
         "resource_profiles": pools_json,
         "arrival_time_distribution": arrival_time_dist,
         "arrival_time_calendar": calendars_map[arrival_calendar_id],
-        "gateway_branching_probabilities": gateways_branching,
+        "gateway_branching_probabilities": gateway_branching_probabilities,
         "task_resource_distribution": task_resource_dist,
         "resource_calendars": resource_calendars,
     }
