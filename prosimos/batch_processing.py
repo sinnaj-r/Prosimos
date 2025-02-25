@@ -758,9 +758,9 @@ class AndFiringRule():
                 
                 curr_size, new_enabled_time = subrule.get_batch_size_by_daily_hour(element, only_one_date, self.daily_hour_range, debug)
                 if only_one_date and subrule.operator in ["<", "<="]:
-                    enabled_time = max(initial_curr_enabled_at, new_enabled_time)
+                    enabled_time = max(initial_curr_enabled_at or new_enabled_time, new_enabled_time or initial_curr_enabled_at)
                 elif subrule.operator in [">", ">="]:
-                    enabled_time = min(initial_curr_enabled_at, new_enabled_time)
+                    enabled_time = min(initial_curr_enabled_at or new_enabled_time, new_enabled_time or initial_curr_enabled_at)
                 else:
                     enabled_time = new_enabled_time
                 if curr_size < 2:
